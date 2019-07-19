@@ -24,6 +24,8 @@ parser.add_argument('--remove_doubles', type=bool, default=False,
                     help='Remove double vertices to improve mesh quality.')
 parser.add_argument('--edge_split', type=bool, default=False,
                     help='Adds edge split filter.')
+parser.add_argument('--move_and_save', type=bool, default=False,
+                    help='Move to center and overwrite the original file.')
 parser.add_argument('--depth_scale', type=float, default=1.4,
                     help='Scaling that is applied to depth. Depends on size of mesh. '
                          'Try out various values until you get a good result. '
@@ -79,25 +81,43 @@ scale_normal.blend_type = 'MULTIPLY'
 scale_normal.inputs[2].default_value = (0.5, 0.5, 0.5, 1)
 links.new(render_layers.outputs['Normal'], scale_normal.inputs[1])
 
-bias_normal = tree.nodes.new(type="CompositorNodeMixRGB")
-bias_normal.blend_type = 'ADD'
-# bias_normal.use_alpha = True
-bias_normal.inputs[2].default_value = (0.5, 0.5, 0.5, 0)
-links.new(scale_normal.outputs[0], bias_normal.inputs[1])
-
-normal_file_output = tree.nodes.new(type="CompositorNodeOutputFile")
-normal_file_output.label = 'Normal Output'
-links.new(bias_normal.outputs[0], normal_file_output.inputs[0])
-
-albedo_file_output = tree.nodes.new(type="CompositorNodeOutputFile")
-albedo_file_output.label = 'Albedo Output'
-links.new(render_layers.outputs['Color'], albedo_file_output.inputs[0])
+# bias_normal = tree.nodes.new(type="CompositorNodeMixRGB")
+# bias_normal.blend_type = 'ADD'
+# # bias_normal.use_alpha = True
+# bias_normal.inputs[2].default_value = (0.5, 0.5, 0.5, 0)
+# links.new(scale_normal.outputs[0], bias_normal.inputs[1])
+#
+# normal_file_output = tree.nodes.new(type="CompositorNodeOutputFile")
+# normal_file_output.label = 'Normal Output'
+# links.new(bias_normal.outputs[0], normal_file_output.inputs[0])
+#
+# albedo_file_output = tree.nodes.new(type="CompositorNodeOutputFile")
+# albedo_file_output.label = 'Albedo Output'
+# links.new(render_layers.outputs['Color'], albedo_file_output.inputs[0])
 
 # Delete default cube
 bpy.data.objects['Cube'].select = True
 bpy.ops.object.delete()
 
 bpy.ops.import_scene.obj(filepath=args.obj)
+
+for ob in bpy.context.scene.objects:
+    if ob.type == 'MESH':
+        # ob.rotation_euler[0] = 0
+        print(ob.name, ob.location, ob.rotation_euler)
+        print(ob.data)
+        me = ob.data
+        verts_sel = [v.co for v in me.vertices if v.select]
+        pivot = sum(verts_sel, Vector()) / len(verts_sel)
+        global_offset = ob.matrix_world * pivot
+        print("Local:", pivot)
+        print("Global:", global_offset)
+
+        global_offset[2] = 0
+        ob.location = ob.location - global_offset
+
+        bpy.ops.export_scene.obj(filepath=args.obj, use_selection=True)
+
 for object in bpy.context.scene.objects:
     if object.name in ['Camera', 'Lamp']:
         continue
@@ -176,7 +196,7 @@ cam = scene.objects['Camera']
 image_id = 0
 cam_offset_base = [0, 0, 0]
 # cam_offset_base = (11.65, -4.58, -51.47)
-cam_distance = 40 if obj_dimension == 0 else obj_dimension * 1.4
+cam_distance = 40 if obj_dimension == 0 else obj_dimension * 1.5
 small_distance = 1e-5
 cam_location_base_list = [(small_distance, small_distance, cam_distance), ]
 # (small_distance, cam_distance, small_distance),
@@ -203,8 +223,8 @@ for cam_location_base in cam_location_base_list:
     stepsize = 360.0 / args.views
     rotation_mode = 'XYZ'
 
-    for output_node in [depth_file_output, normal_file_output, albedo_file_output]:
-        output_node.base_path = ''
+    # for output_node in [depth_file_output, normal_file_output, albedo_file_output]:
+    #     output_node.base_path = ''
 
     base_angle = 225
     print(b_empty.rotation_euler)
