@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CloudCompare>
+
+	<!-- BoxThickness: base clipping-box dimensions -->
+	<!-- Thickness values must be positive -->
+    <BoxThickness x="60" y="60" z="60"/>
+	<!-- BoxCenter: clipping-box center -->
+	<!-- Optional (if not defined, the center of the bounding-box of each entity will be used instead) -->	
+	<BoxCenter x="0" y="0" z="0"/>
+	<!-- 'Repeat' dimension for cross sections generation. Additional RepeatDims can be added to split in multiple dimensions. -->
+	<!-- Can be 0 (X), 1 (Y) or 2 (Z) -->
+    <RepeatDim>0</RepeatDim>
+    <RepeatDim>2</RepeatDim>
+	<!-- Gap between two sections (might be negative, but bigger than the (minus) thickness along the repeat dimension). -->
+	<!-- Optional (gap = 0 by default) -->
+	<RepeatGap>-40</RepeatGap>
+	<!-- Input/Output folder path -->
+	<!-- 'FilePath' key: all files (but XML ones) present in the folder pointed by FilePath will be loaded (previously loaded entities will be removed!) -->
+	<!-- 'OutputFilePath' key: if defined, output files will be saved in this folder (if not, FilePath will be used or the current folder if neither are defined) -->
+	<!-- (Note: output entities are be saved in sub-folders) -->
+	<OutputFilePath>C:\Users\bunny\Desktop\output\60</OutputFilePath> <!-- Use this option if you want to use the previously loaded entities -->
+	<!--FilePath>C:\data</FilePath--> <!-- Use this option if you want to sequentially load files in a folder (it requires less memory if you have lots of entities) -->
+
+</CloudCompare>

@@ -42,18 +42,20 @@ args = parser.parse_args(argv)
 bpy.data.objects['Cube'].select = True
 bpy.ops.object.delete()
 
-bpy.ops.import_scene.obj(filepath=r'C:\Users\bunny\Desktop\test.obj')
+bpy.ops.import_scene.obj(filepath=args.obj)
 for ob in bpy.context.scene.objects:
     if ob.type == 'MESH':
-        ob.rotation_euler[0] += radians(-90)
+        # ob.rotation_euler[0] = 0
         print(ob.name, ob.location, ob.rotation_euler)
         print(ob.data)
         me = ob.data
         verts_sel = [v.co for v in me.vertices if v.select]
         pivot = sum(verts_sel, Vector()) / len(verts_sel)
+        global_offset = ob.matrix_world * pivot
         print("Local:", pivot)
-        print("Global:", ob.matrix_world * pivot)
+        print("Global:", global_offset)
 
-        ob.location = ob.location - pivot
+        global_offset[2] = 0
+        ob.location = ob.location - global_offset
 
-        bpy.ops.export_scene.obj(filepath=r'C:\Users\bunny\Desktop\test_2.obj', use_selection=True)
+        bpy.ops.export_scene.obj(filepath=args.obj, use_selection=True)

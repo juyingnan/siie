@@ -20,11 +20,11 @@ parser.add_argument('--output_folder', type=str, default='/tmp',
                     help='The path the output will be dumped to.')
 parser.add_argument('--scale', type=float, default=1,
                     help='Scaling factor applied to model. Depends on size of mesh.')
-parser.add_argument('--remove_doubles', type=bool, default=True,
+parser.add_argument('--remove_doubles', type=bool, default=False,
                     help='Remove double vertices to improve mesh quality.')
-parser.add_argument('--edge_split', type=bool, default=True,
+parser.add_argument('--edge_split', type=bool, default=False,
                     help='Adds edge split filter.')
-parser.add_argument('--depth_scale', type=float, default=2,
+parser.add_argument('--depth_scale', type=float, default=1.4,
                     help='Scaling that is applied to depth. Depends on size of mesh. '
                          'Try out various values until you get a good result. '
                          'Ignored if format is OPEN_EXR.')
@@ -143,6 +143,30 @@ def parent_obj_to_camera(b_camera):
     return b_empty
 
 
+def make_dir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+    # else:
+    #     shutil.rmtree(path)
+    #     os.makedirs(path)
+
+
+obj_dimension = 0
+for ob in bpy.context.scene.objects:
+    if ob.type == 'MESH':
+        print(ob.name, ob.location, ob.rotation_euler, ob.dimensions)
+        obj_dimension = max(ob.dimensions)
+        # print(ob.data)
+        # me = ob.data
+        # verts_sel = [v.co for v in me.vertices if v.select]
+        # pivot = sum(verts_sel, Vector()) / len(verts_sel)
+        # print("Local:", pivot)
+        # print("Global:", ob.matrix_world * pivot)
+
+# for ob in scene.objects:
+#     if ob.type == 'MESH':
+#         print(ob.name, ob.rotation_euler)
+
 scene = bpy.context.scene
 scene.render.resolution_x = 600
 scene.render.resolution_y = 600
@@ -152,28 +176,15 @@ cam = scene.objects['Camera']
 image_id = 0
 cam_offset_base = [0, 0, 0]
 # cam_offset_base = (11.65, -4.58, -51.47)
-cam_distance = 40
+cam_distance = 40 if obj_dimension == 0 else obj_dimension * 1.5
 small_distance = 1e-5
-cam_location_base_list = [(small_distance, small_distance, cam_distance),]
-                         # (small_distance, cam_distance, small_distance),
-                         # (cam_distance, small_distance, small_distance)]
+cam_location_base_list = [(small_distance, small_distance, cam_distance), ]
+# (small_distance, cam_distance, small_distance),
+# (cam_distance, small_distance, small_distance)]
 # cam_location_base_list = [(0, 0.0001, 2), (0, 2, 0), (0, 1.5, 1.5)]
+make_dir(args.output_folder)
 render_list_file_path = fp = os.path.join(args.output_folder, 'rendering_metadata.txt')
 f = open(render_list_file_path, "w")
-
-for ob in bpy.context.scene.objects:
-    if ob.type == 'MESH':
-        print(ob.name, ob.location, ob.rotation_euler)
-        print(ob.data)
-        me = ob.data
-        verts_sel = [v.co for v in me.vertices if v.select]
-        pivot = sum(verts_sel, Vector()) / len(verts_sel)
-        print("Local:", pivot)
-        print("Global:", ob.matrix_world * pivot)
-
-for ob in scene.objects:
-    if ob.type == 'MESH':
-        print(ob.name, ob.rotation_euler )
 
 for cam_location_base in cam_location_base_list:
     cam.location = [(loc - offset) for loc, offset in zip(cam_location_base, cam_offset_base)]
@@ -198,9 +209,10 @@ for cam_location_base in cam_location_base_list:
     base_angle = 225
     print(b_empty.rotation_euler)
     b_empty.rotation_euler[2] += radians(stepsize / 2)
+
     for i in range(0, args.views):
         print("Rotation {}, {}".format((stepsize * i), radians(stepsize * i)))
-        scene.render.filepath = args.output_folder + '{0:02d}'.format(image_id)
+        scene.render.filepath = os.path.join(args.output_folder, '{0:02d}'.format(image_id))
         # depth_file_output.file_slots[0].path = scene.render.filepath + "_depth.png"
         # normal_file_output.file_slots[0].path = scene.render.filepath + "_normal.png"
         # albedo_file_output.file_slots[0].path = scene.render.filepath + "_albedo.png"
@@ -216,5 +228,4 @@ for cam_location_base in cam_location_base_list:
         f.write('{} {} 0 {} 25\n'.format(angle, phi, distance))
 
 f.close()
-
-
+print(cam_distance)
