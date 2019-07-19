@@ -176,7 +176,7 @@ cam = scene.objects['Camera']
 image_id = 0
 cam_offset_base = [0, 0, 0]
 # cam_offset_base = (11.65, -4.58, -51.47)
-cam_distance = 40 if obj_dimension == 0 else obj_dimension * 1.5
+cam_distance = 40 if obj_dimension == 0 else obj_dimension * 1.4
 small_distance = 1e-5
 cam_location_base_list = [(small_distance, small_distance, cam_distance), ]
 # (small_distance, cam_distance, small_distance),
