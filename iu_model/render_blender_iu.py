@@ -226,7 +226,7 @@ for cam_location_base in cam_location_base_list:
     # for output_node in [depth_file_output, normal_file_output, albedo_file_output]:
     #     output_node.base_path = ''
 
-    base_angle = 225
+    base_angle = 270
     print(b_empty.rotation_euler)
     b_empty.rotation_euler[2] += radians(stepsize / 2)
 
