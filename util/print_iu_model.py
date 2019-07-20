@@ -135,6 +135,7 @@ file.close()
 # step 5
 # use 3_camera_transform.py to generate point cloud (pickle -> dat) for each image
 file = open('../iu_model/command/step_5.sh', 'w')
+file.write('#!/bin/bash\n')
 output_xyz_list = list()
 for obj_root in obj_file_root_list:
     output_dir = os.path.join(obj_root, 'output')
@@ -180,3 +181,14 @@ for output_dat_file in output_dat_list:
     file.write(line + '\n')
 print()
 file.close()
+
+# step 7
+# check if numbers of folder and point cloud are same
+for obj_root in obj_file_root_list:
+    output_dir = os.path.join(obj_root, 'output')
+    for (dirpath, dirnames, filenames) in os.walk(output_dir):
+        if len(filenames) > 10 and len(filenames) != len(dirnames):
+            print(dirpath)
+            for dirname in dirnames:
+                if (dirname + '.xyz') not in filenames:
+                    print(dirname)
