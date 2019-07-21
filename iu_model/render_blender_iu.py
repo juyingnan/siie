@@ -20,9 +20,9 @@ parser.add_argument('--output_folder', type=str, default='/tmp',
                     help='The path the output will be dumped to.')
 parser.add_argument('--scale', type=float, default=1,
                     help='Scaling factor applied to model. Depends on size of mesh.')
-parser.add_argument('--remove_doubles', type=bool, default=False,
+parser.add_argument('--remove_doubles', type=bool, default=True,
                     help='Remove double vertices to improve mesh quality.')
-parser.add_argument('--edge_split', type=bool, default=False,
+parser.add_argument('--edge_split', type=bool, default=True,
                     help='Adds edge split filter.')
 parser.add_argument('--move_and_save', type=bool, default=False,
                     help='Move to center and overwrite the original file.')
