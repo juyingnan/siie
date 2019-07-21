@@ -1,12 +1,12 @@
 import os
 
-STEP_1 = True # CROSS SECTION
-STEP_2 = True # 2 + 3: move to the center and generate thumb images
-STEP_3 = True # empty
-STEP_4 = True # generate point cloud
-STEP_5 = True # use 3_camera_transform.py to generate point cloud (pickle -> dat) for each image
-STEP_6 = True # generate train and test list
-STEP_7 = True # check if numbers of folder and point cloud are same
+STEP_1 = True  # CROSS SECTION
+STEP_2 = True  # 2 + 3: move to the center and generate thumb images
+STEP_3 = True  # empty
+STEP_4 = True  # generate point cloud
+STEP_5 = True  # use 3_camera_transform.py to generate point cloud (pickle -> dat) for each image
+STEP_6 = True  # generate train and test list
+STEP_7 = True  # check if numbers of folder and point cloud are same
 
 # step 0: use Blender to rotate and transfer the basic models
 # no split
