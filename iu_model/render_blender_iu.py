@@ -192,6 +192,7 @@ scene.render.resolution_x = 600
 scene.render.resolution_y = 600
 scene.render.resolution_percentage = 100
 scene.render.alpha_mode = 'TRANSPARENT'
+scene.camera.data.clip_end = 200
 cam = scene.objects['Camera']
 image_id = 0
 cam_offset_base = [0, 0, 0]
