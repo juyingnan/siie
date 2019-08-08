@@ -61,7 +61,7 @@ if STEP_1:
     repeat_dim_list = [0, 2]
     for obj_root in obj_file_root_list:
         xml_file_list = list()
-        for dimension, gap in zip([30, 40, 50, 60, 70], [10, 10, 20, 20, 20]):
+        for dimension, gap in zip([40], [5]):
             xml_file_name = 'cross_section_params_{:02d}_{:02d}.xml'.format(dimension, gap)
             xml_path = os.path.join(obj_root, xml_file_name)
             xml_file = open(xml_path, 'w')
@@ -130,14 +130,14 @@ if STEP_2:
 # -SAVE_CLOUDS FILE C:\Users\bunny\Desktop\models_google_poly\1\model_normal.xyz
 if STEP_4:
     file = open('../iu_model/command/step_4.bat', 'w')
-    sample_density = 10
+    points = 20000
 
     for output_obj_file in output_obj_list:
         line = r'START /W C:\Users\bunny\Desktop\CloudCompareStereo_v2.10.2_bin_x64\CloudCompare.exe ' \
                r'-SILENT -AUTO_SAVE OFF ' \
                r'-O {0} ' \
-               r'-SAMPLE_MESH DENSITY {1} -C_EXPORT_FMT ASC ' \
-               r'-SAVE_CLOUDS FILE {2}'.format(output_obj_file, sample_density, output_obj_file.replace('obj', 'xyz'))
+               r'-SAMPLE_MESH POINTS {1} -C_EXPORT_FMT ASC ' \
+               r'-SAVE_CLOUDS FILE {2}'.format(output_obj_file, points, output_obj_file.replace('obj', 'xyz'))
         print(line)
         file.write(line + '\n')
     print()
