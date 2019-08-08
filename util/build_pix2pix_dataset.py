@@ -49,4 +49,4 @@ for img_root in file_root_list:
             output_path = os.path.join(output_dir, root_postfix + '_' + loc + '_' + file_name)
             io.imsave(output_path, resized)
             count += 1
-            print(count, '/', total_count, '\r', end='')
+            print(count, '/', total_count)  # , '\r', end='')
