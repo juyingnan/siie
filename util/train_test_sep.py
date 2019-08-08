@@ -13,7 +13,7 @@ split_line = 30
 img_width = 40
 low_line = split_line - img_width / 2
 high_line = split_line + img_width / 2
-split_axis = 2  # 0-x, 1-y, 2-z
+split_axis = 3  # 1-x, 2-y, 3-z
 
 for img_root in root_dir:
     input_img_a_list = list()
