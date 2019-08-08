@@ -18,7 +18,7 @@ parser.add_argument('obj', type=str,
                     help='Path to the obj file to be rendered.')
 parser.add_argument('--output_folder', type=str, default='/tmp',
                     help='The path the output will be dumped to.')
-parser.add_argument('--scale', type=float, default=1,
+parser.add_argument('--scale', type=float, default=0.02,
                     help='Scaling factor applied to model. Depends on size of mesh.')
 parser.add_argument('--remove_doubles', type=bool, default=True,
                     help='Remove double vertices to improve mesh quality.')
@@ -81,16 +81,16 @@ scale_normal.blend_type = 'MULTIPLY'
 scale_normal.inputs[2].default_value = (0.5, 0.5, 0.5, 1)
 links.new(render_layers.outputs['Normal'], scale_normal.inputs[1])
 
-# bias_normal = tree.nodes.new(type="CompositorNodeMixRGB")
-# bias_normal.blend_type = 'ADD'
-# # bias_normal.use_alpha = True
-# bias_normal.inputs[2].default_value = (0.5, 0.5, 0.5, 0)
-# links.new(scale_normal.outputs[0], bias_normal.inputs[1])
-#
-# normal_file_output = tree.nodes.new(type="CompositorNodeOutputFile")
-# normal_file_output.label = 'Normal Output'
-# links.new(bias_normal.outputs[0], normal_file_output.inputs[0])
-#
+bias_normal = tree.nodes.new(type="CompositorNodeMixRGB")
+bias_normal.blend_type = 'ADD'
+# bias_normal.use_alpha = True
+bias_normal.inputs[2].default_value = (0.5, 0.5, 0.5, 0)
+links.new(scale_normal.outputs[0], bias_normal.inputs[1])
+
+normal_file_output = tree.nodes.new(type="CompositorNodeOutputFile")
+normal_file_output.label = 'Normal Output'
+links.new(bias_normal.outputs[0], normal_file_output.inputs[0])
+
 # albedo_file_output = tree.nodes.new(type="CompositorNodeOutputFile")
 # albedo_file_output.label = 'Albedo Output'
 # links.new(render_layers.outputs['Color'], albedo_file_output.inputs[0])
@@ -101,22 +101,23 @@ bpy.ops.object.delete()
 
 bpy.ops.import_scene.obj(filepath=args.obj)
 
-for ob in bpy.context.scene.objects:
-    if ob.type == 'MESH':
-        # ob.rotation_euler[0] = 0
-        print(ob.name, ob.location, ob.rotation_euler)
-        print(ob.data)
-        me = ob.data
-        verts_sel = [v.co for v in me.vertices if v.select]
-        pivot = sum(verts_sel, Vector()) / len(verts_sel)
-        global_offset = ob.matrix_world * pivot
-        print("Local:", pivot)
-        print("Global:", global_offset)
+if args.move_and_save:
+    for ob in bpy.context.scene.objects:
+        if ob.type == 'MESH':
+            # ob.rotation_euler[0] = 0
+            print(ob.name, ob.location, ob.rotation_euler)
+            print(ob.data)
+            me = ob.data
+            verts_sel = [v.co for v in me.vertices if v.select]
+            pivot = sum(verts_sel, Vector()) / len(verts_sel)
+            global_offset = ob.matrix_world * pivot
+            print("Local:", pivot)
+            print("Global:", global_offset)
 
-        global_offset[2] = 0
-        ob.location = ob.location - global_offset
+            global_offset[2] = 0
+            ob.location = ob.location - global_offset
 
-        bpy.ops.export_scene.obj(filepath=args.obj, use_selection=True)
+            bpy.ops.export_scene.obj(filepath=args.obj, use_selection=True)
 
 for object in bpy.context.scene.objects:
     if object.name in ['Camera', 'Lamp']:
@@ -146,7 +147,7 @@ bpy.ops.object.lamp_add(type='SUN')
 lamp2 = bpy.data.lamps['Sun']
 lamp2.shadow_method = 'NOSHADOW'
 lamp2.use_specular = False
-lamp2.energy = 0.8
+lamp2.energy = 0.2
 bpy.data.objects['Sun'].rotation_euler = bpy.data.objects['Lamp'].rotation_euler
 bpy.data.objects['Sun'].rotation_euler[0] += 180
 
@@ -224,8 +225,8 @@ for cam_location_base in cam_location_base_list:
     stepsize = 360.0 / args.views
     rotation_mode = 'XYZ'
 
-    # for output_node in [depth_file_output, normal_file_output, albedo_file_output]:
-    #     output_node.base_path = ''
+    for output_node in [depth_file_output, normal_file_output]:#, albedo_file_output]:
+        output_node.base_path = ''
 
     base_angle = 270
     print(b_empty.rotation_euler)
@@ -234,8 +235,9 @@ for cam_location_base in cam_location_base_list:
     for i in range(0, args.views):
         print("Rotation {}, {}".format((stepsize * i), radians(stepsize * i)))
         scene.render.filepath = os.path.join(args.output_folder, '{0:02d}'.format(image_id))
+        depth_file_output.file_slots[0].path = os.path.join(args.output_folder, '{0:02d}_d.png'.format(image_id))
         # depth_file_output.file_slots[0].path = scene.render.filepath + "_depth.png"
-        # normal_file_output.file_slots[0].path = scene.render.filepath + "_normal.png"
+        normal_file_output.file_slots[0].path = os.path.join(args.output_folder, '{0:02d}_n.png'.format(image_id))
         # albedo_file_output.file_slots[0].path = scene.render.filepath + "_albedo.png"
 
         bpy.ops.render.render(write_still=True)  # render still
@@ -245,7 +247,7 @@ for cam_location_base in cam_location_base_list:
 
         # output rendering file
         angle = (base_angle - stepsize * i + 360) % 360
-        distance = math.sqrt(sum([item * item for item in cam.location]))  # * 0.57
+        distance = math.sqrt(sum([item * item for item in cam.location])) * 0.57
         f.write('{} {} 0 {} 25\n'.format(angle, phi, distance))
 
 f.close()
