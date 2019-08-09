@@ -4,7 +4,7 @@ from skimage import io, segmentation, color
 from skimage.future import graph
 
 image_normal_folder = r'C:\Users\bunny\Desktop\iu_normal_result'
-image_depth_folder = r'C:\Users\bunny\Desktop\iu_normal_result'
+image_depth_folder = r'C:\Users\bunny\Desktop\iu_depth_result'
 image_combine_folder = r'C:\Users\bunny\Desktop\iu_combine_result'
 
 img_path_list = list()
@@ -22,7 +22,7 @@ for img_path in img_path_list:
     # labels2 = graph.cut_normalized(labels1, g)
     # out2 = color.label2rgb(labels2, img, kind='avg')
 
-    depth_layer = 255 - base_img[..., 0]
+    depth_layer = 255 - base_img[..., 0] // 1.5
     base_img[..., :3] = normal_img[..., :3]
     base_img = np.dstack((base_img, depth_layer))
     io.imsave(img_path.replace(image_depth_folder, image_combine_folder), base_img)
