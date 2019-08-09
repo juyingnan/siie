@@ -7,9 +7,9 @@ def make_dir(path):
         os.makedirs(path)
 
 
-root_dir = [r'C:\Users\bunny\Desktop\iu_model\modelFriJun07151136.985298\depth']
+root_dir = [r'C:\Users\bunny\Desktop\iu_model\modelFriJun07151136.985298\normal']
 
-split_line = 30
+split_line = -40
 img_width = 40
 low_line = split_line - img_width / 2
 high_line = split_line + img_width / 2
@@ -30,8 +30,8 @@ for img_root in root_dir:
         cor_x = int(img_name.split('_')[split_axis])
         current_file_path = os.path.join(img_root, img_name)
         if cor_x <= low_line:
-            shutil.move(current_file_path, os.path.join(output_train_dir, img_name))
-        elif cor_x >= high_line:
             shutil.move(current_file_path, os.path.join(output_test_dir, img_name))
+        elif cor_x >= high_line:
+            shutil.move(current_file_path, os.path.join(output_train_dir, img_name))
         else:
             shutil.move(current_file_path, os.path.join(output_val_dir, img_name))
