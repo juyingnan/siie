@@ -1,20 +1,28 @@
+import os
+import numpy as np
 from skimage import io, segmentation, color
 from skimage.future import graph
 
-image_normal = io.imread(
-    r'C:\Users\bunny\Desktop\iu_model\modelFriJun07151136.985298\output\40\scene_mesh_textured_rotated\scene_mesh_textured_rotated_-10_0_-10\00_n.png0001.png')
-image_depth = io.imread(
-    r'C:\Users\bunny\Desktop\iu_model\modelFriJun07151136.985298\output\40\scene_mesh_textured_rotated\scene_mesh_textured_rotated_-10_0_-10\00_d.png0001.png')
-img = image_normal[..., :3]
+image_normal_folder = r'C:\Users\bunny\Desktop\iu_normal_result'
+image_depth_folder = r'C:\Users\bunny\Desktop\iu_normal_result'
+image_combine_folder = r'C:\Users\bunny\Desktop\iu_combine_result'
 
+img_path_list = list()
+for (dirpath, dirnames, filenames) in os.walk(image_depth_folder):
+    img_path_list += [os.path.join(dirpath, file) for file in filenames if
+                      file.endswith('outputs.png') or file.endswith('targets.png')]
 
-labels1 = segmentation.slic(img, compactness=30, n_segments=400)
+for img_path in img_path_list:
+    base_img = io.imread(img_path)
+    normal_img = io.imread(img_path.replace(image_depth_folder, image_normal_folder))
 
-g = graph.rag_mean_color(img, labels1, mode='similarity')
-labels2 = graph.cut_normalized(labels1, g)
-out2 = color.label2rgb(labels2, img, kind='avg')
+    # labels1 = segmentation.slic(img, compactness=30, n_segments=400)
+    #
+    # g = graph.rag_mean_color(img, labels1, mode='similarity')
+    # labels2 = graph.cut_normalized(labels1, g)
+    # out2 = color.label2rgb(labels2, img, kind='avg')
 
-depth_layer = 255 - image_depth[..., 0] / 1.5
-image_normal[..., :3] = out2
-image_normal[..., 3] = depth_layer
-io.imsave(r'C:\Users\bunny\Desktop\test.png', image_normal)
+    depth_layer = 255 - base_img[..., 0]
+    base_img[..., :3] = normal_img[..., :3]
+    base_img = np.dstack((base_img, depth_layer))
+    io.imsave(img_path.replace(image_depth_folder, image_combine_folder), base_img)
