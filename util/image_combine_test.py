@@ -22,7 +22,8 @@ for img_path in img_path_list:
     # labels2 = graph.cut_normalized(labels1, g)
     # out2 = color.label2rgb(labels2, img, kind='avg')
 
-    depth_layer = 255 - base_img[..., 0] // 1.5
-    base_img[..., :3] = normal_img[..., :3]
-    base_img = np.dstack((base_img, depth_layer))
+    depth_layer = base_img[..., 0]
+    # base_img[..., :3] = normal_img[..., :3]
+    # base_img[..., 3] = normal_img
+    base_img = np.dstack((normal_img // 3, 255 - depth_layer))
     io.imsave(img_path.replace(image_depth_folder, image_combine_folder), base_img)
