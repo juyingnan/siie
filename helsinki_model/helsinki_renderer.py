@@ -26,7 +26,7 @@ parser.add_argument('--edge_split', type=bool, default=True,
                     help='Adds edge split filter.')
 parser.add_argument('--move_and_save', type=bool, default=False,
                     help='Move to center and overwrite the original file.')
-parser.add_argument('--depth_scale', type=float, default=0.03,
+parser.add_argument('--depth_scale', type=float, default=0.5,
                     help='Scaling that is applied to depth. Depends on size of mesh. '
                          'Try out various values until you get a good result. '
                          'Ignored if format is OPEN_EXR.')
@@ -67,7 +67,7 @@ else:
     # Remap as other types can not represent the full range of depth.
     map = tree.nodes.new(type="CompositorNodeMapValue")
     # Size is chosen kind of arbitrarily, try out until you're satisfied with resulting depth map.
-    map.offset = [-0.7]
+    map.offset = [0]
     map.size = [args.depth_scale]
     map.use_min = True
     map.min = [0]
