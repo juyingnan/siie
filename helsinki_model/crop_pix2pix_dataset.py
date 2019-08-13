@@ -43,5 +43,4 @@ for function in functions:
             output_path = os.path.join(output_dir, loc + '.png')
             io.imsave(output_path, resized)
             image_count -= 1
-            if image_count % 3 == 0:
-                print('\rImage left: {}'.format(image_count), end='')
+            print('\rImage left: {}'.format(image_count), end='')
