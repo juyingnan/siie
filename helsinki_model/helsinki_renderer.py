@@ -12,7 +12,7 @@ from math import radians
 import math
 
 parser = argparse.ArgumentParser(description='Renders given obj file by rotation a camera around it.')
-parser.add_argument('--views', type=int, default=4,
+parser.add_argument('--views', type=int, default=1,
                     help='number of views to be rendered')
 parser.add_argument('obj', type=str,
                     help='Path to the obj file to be rendered.')
@@ -26,7 +26,7 @@ parser.add_argument('--edge_split', type=bool, default=True,
                     help='Adds edge split filter.')
 parser.add_argument('--move_and_save', type=bool, default=False,
                     help='Move to center and overwrite the original file.')
-parser.add_argument('--depth_scale', type=float, default=0.5,
+parser.add_argument('--depth_scale', type=float, default=1.4,
                     help='Scaling that is applied to depth. Depends on size of mesh. '
                          'Try out various values until you get a good result. '
                          'Ignored if format is OPEN_EXR.')
@@ -71,6 +71,8 @@ else:
     map.size = [args.depth_scale]
     map.use_min = True
     map.min = [0]
+    map.use_max = True
+    map.max = [255]
     links.new(render_layers.outputs['Depth'], map.inputs[0])
 
     links.new(map.outputs[0], depth_file_output.inputs[0])
@@ -101,11 +103,26 @@ bpy.ops.object.delete()
 
 bpy.ops.import_scene.obj(filepath=args.obj)
 
+obs = []
+for ob in bpy.context.scene.objects:
+    # whatever objects you want to join...
+    if ob.type == 'MESH':
+        obs.append(ob)
+ctx = bpy.context.copy()
+# one of the objects to join
+ctx['active_object'] = obs[0]
+ctx['selected_objects'] = obs
+# we need the scene bases as well for joining
+ctx['selected_editable_bases'] = [bpy.context.scene.object_bases[ob.name] for ob in obs]
+bpy.ops.object.join(ctx)
+ctx['name'] = 'combine'
+
 obj_dimension = 0
 for ob in bpy.context.scene.objects:
     if ob.type == 'MESH':
         print(ob.name, ob.location, ob.rotation_euler, ob.dimensions)
         obj_dimension = max(ob.dimensions)
+print('Max dimension: {}'.format(obj_dimension))
 
 for object in bpy.context.scene.objects:
     if object.name in ['Camera', 'Lamp']:
@@ -184,37 +201,21 @@ def make_dir(path):
     #     shutil.rmtree(path)
     #     os.makedirs(path)
 
-
-obj_dimension = 0
-for ob in bpy.context.scene.objects:
-    if ob.type == 'MESH':
-        print(ob.name, ob.location, ob.rotation_euler, ob.dimensions)
-        obj_dimension = max(ob.dimensions)
-        # print(ob.data)
-        # me = ob.data
-        # verts_sel = [v.co for v in me.vertices if v.select]
-        # pivot = sum(verts_sel, Vector()) / len(verts_sel)
-        # print("Local:", pivot)
-        # print("Global:", ob.matrix_world * pivot)
-
-# for ob in scene.objects:
-#     if ob.type == 'MESH':
-#         print(ob.name, ob.rotation_euler)
-
 scene = bpy.context.scene
-scene.render.resolution_x = 256
-scene.render.resolution_y = 256
+scene.render.resolution_x = obj_dimension * 10
+scene.render.resolution_y = obj_dimension * 10
 scene.render.resolution_percentage = 100
 scene.render.alpha_mode = 'TRANSPARENT'
-scene.camera.data.clip_end = 200
+scene.camera.data.clip_end = 5000
 cam = scene.objects['Camera']
 bpy.data.cameras['Camera'].type = 'ORTHO'
 bpy.data.cameras['Camera'].ortho_scale = 1
 image_id = 0
 cam_offset_base = [0, 0, 0]
 # cam_offset_base = (11.65, -4.58, -51.47)
-cam_distance = 40 if obj_dimension == 0 else obj_dimension * 2.0
-small_distance = 1e-5
+# cam_distance = 40 if obj_dimension == 0 else obj_dimension * 1.0
+cam_distance = 0.5
+small_distance = 0 # 1e-5
 cam_location_base_list = [(small_distance, small_distance, cam_distance)]
 # (small_distance, cam_distance, small_distance),
 # (cam_distance, small_distance, small_distance)]
@@ -226,7 +227,8 @@ f = open(render_list_file_path, "w")
 for cam_location_base in cam_location_base_list:
     cam.location = [(loc - offset) for loc, offset in zip(cam_location_base, cam_offset_base)]
     print(cam.location)
-    phi = math.degrees(math.atan(cam_location_base[2] / cam_location_base[1]))
+    phi = 0
+    # phi = math.degrees(math.atan(cam_location_base[2] / cam_location_base[1]))
     cam_constraint = cam.constraints.new(type='TRACK_TO')
     cam_constraint.track_axis = 'TRACK_NEGATIVE_Z'
     cam_constraint.up_axis = 'UP_Y'
@@ -245,7 +247,7 @@ for cam_location_base in cam_location_base_list:
 
     base_angle = 270
     print(b_empty.rotation_euler)
-    b_empty.rotation_euler[2] += radians(stepsize / 2)
+    b_empty.rotation_euler[2] += radians(45)
 
     for i in range(0, args.views):
         print("Rotation {}, {}".format((stepsize * i), radians(stepsize * i)))
