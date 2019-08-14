@@ -31,16 +31,15 @@ for function in functions:
 
     image_count = 5000
     while image_count > 0:
-        startpoint = [random.randint(0, left_img.shape[0]), random.randint(0, left_img.shape[1])]
         crop_dim = random.randint(original_dim_range[0], original_dim_range[1])
+        startpoint = [random.randint(0, left_img.shape[0] - crop_dim), random.randint(0, left_img.shape[1] - crop_dim)]
         end_point = [point + crop_dim for point in startpoint]
-        if end_point[0] <= left_img.shape[0] and end_point[1] <= left_img.shape[1]:
-            cropped_left_img = left_img[startpoint[0]:end_point[0], startpoint[1]:end_point[1]]
-            cropped_right_img = right_img[startpoint[0]:end_point[0], startpoint[1]:end_point[1]]
-            merge = np.concatenate((cropped_left_img, cropped_right_img), axis=1)
-            resized = (255 * transform.resize(merge, resized_shape, anti_aliasing=True)).astype(np.uint8)
-            loc = '_'.join([str(point) for point in startpoint + end_point])
-            output_path = os.path.join(output_dir, loc + '.png')
-            io.imsave(output_path, resized)
-            image_count -= 1
-            print('\rImage left: {}'.format(image_count), end='')
+        cropped_left_img = left_img[startpoint[0]:end_point[0], startpoint[1]:end_point[1]]
+        cropped_right_img = right_img[startpoint[0]:end_point[0], startpoint[1]:end_point[1]]
+        merge = np.concatenate((cropped_left_img, cropped_right_img), axis=1)
+        resized = (255 * transform.resize(merge, resized_shape, anti_aliasing=False)).astype(np.uint8)
+        loc = '_'.join([str(point) for point in startpoint + end_point])
+        output_path = os.path.join(output_dir, loc + '.png')
+        io.imsave(output_path, resized)
+        image_count -= 1
+        print('\rImage left: {}'.format(image_count), end='')
