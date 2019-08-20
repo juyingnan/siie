@@ -24,7 +24,7 @@ alpha_layer = None
 if alpha_img_name is None:
     layer_shape = [dim for dim in base_img.shape]
     layer_shape[-1] = 1
-    alpha_layer = 255 - np.zeros(layer_shape)
+    alpha_layer = 255 - np.zeros(layer_shape, dtype=np.uint8)
 else:
     alpha_layer = 255 - io.imread(os.path.join(root_dir, alpha_img_name))[..., :1]
 print(alpha_layer.shape)
