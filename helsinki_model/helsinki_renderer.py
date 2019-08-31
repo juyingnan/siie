@@ -56,6 +56,38 @@ bpy.context.scene.render.image_settings.color_depth = args.color_depth
 for n in tree.nodes:
     tree.nodes.remove(n)
 
+# Delete default cube
+bpy.data.objects['Cube'].select = True
+bpy.ops.object.delete()
+
+bpy.ops.import_scene.obj(filepath=args.obj)
+
+obs = []
+for ob in bpy.context.scene.objects:
+    # whatever objects you want to join...
+    if ob.type == 'MESH':
+        obs.append(ob)
+ctx = bpy.context.copy()
+# one of the objects to join
+ctx['active_object'] = obs[0]
+ctx['selected_objects'] = obs
+# we need the scene bases as well for joining
+ctx['selected_editable_bases'] = [bpy.context.scene.object_bases[ob.name] for ob in obs]
+bpy.ops.object.join(ctx)
+ctx['name'] = 'combine'
+
+obj_dimension_x = 0
+obj_dimension_y = 0
+for ob in bpy.context.scene.objects:
+    if ob.type == 'MESH':
+        print(ob.name, ob.location, ob.rotation_euler, ob.dimensions)
+        obj_dimension_x = ob.dimensions[0]
+        obj_dimension_y = max(ob.dimensions[1:])
+print('Max dimension: {}, {}'.format(obj_dimension_x, obj_dimension_y))
+max_obj_dimension = max(obj_dimension_x, obj_dimension_y)
+# obj_dimension = 2650
+
+cam_distance = 1
 # Create input render layer node.
 render_layers = tree.nodes.new('CompositorNodeRLayers')
 
@@ -67,8 +99,9 @@ else:
     # Remap as other types can not represent the full range of depth.
     map = tree.nodes.new(type="CompositorNodeMapValue")
     # Size is chosen kind of arbitrarily, try out until you're satisfied with resulting depth map.
-    map.offset = [0]
-    map.size = [args.depth_scale]
+    map.offset = [150 / max_obj_dimension - cam_distance]
+    # map.size = [args.depth_scale]
+    map.size = [1]
     map.use_min = True
     map.min = [0]
     map.use_max = True
@@ -97,32 +130,26 @@ links.new(bias_normal.outputs[0], normal_file_output.inputs[0])
 # albedo_file_output.label = 'Albedo Output'
 # links.new(render_layers.outputs['Color'], albedo_file_output.inputs[0])
 
-# Delete default cube
-bpy.data.objects['Cube'].select = True
-bpy.ops.object.delete()
-
-bpy.ops.import_scene.obj(filepath=args.obj)
-
-obs = []
-for ob in bpy.context.scene.objects:
-    # whatever objects you want to join...
-    if ob.type == 'MESH':
-        obs.append(ob)
-ctx = bpy.context.copy()
-# one of the objects to join
-ctx['active_object'] = obs[0]
-ctx['selected_objects'] = obs
-# we need the scene bases as well for joining
-ctx['selected_editable_bases'] = [bpy.context.scene.object_bases[ob.name] for ob in obs]
-bpy.ops.object.join(ctx)
-ctx['name'] = 'combine'
-
-obj_dimension = 0
+min_x0, min_y0, max_x0, max_y0 = 0, 0, 0, 0
 for ob in bpy.context.scene.objects:
     if ob.type == 'MESH':
-        print(ob.name, ob.location, ob.rotation_euler, ob.dimensions)
-        obj_dimension = max(ob.dimensions)
-print('Max dimension: {}'.format(obj_dimension))
+        ob.rotation_euler[0] = 0
+        bpy.ops.object.transform_apply(rotation=True)
+        print(ob.name, ob.location, ob.rotation_euler)
+        print(ob.data)
+        me = ob.data
+        verts_sel = [v.co for v in me.vertices if v.select]
+        min_x0 = min([vert[0] for vert in verts_sel])
+        min_y0 = min([vert[1] for vert in verts_sel])
+        max_x0 = max([vert[0] for vert in verts_sel])
+        max_y0 = max([vert[1] for vert in verts_sel])
+        # pivot = sum(verts_sel, Vector()) / len(verts_sel)
+        # global_offset = ob.matrix_world * pivot
+        # print("Local:", pivot)
+        # print("Global:", global_offset)
+        # pivot[2] = 0
+        print(min_x0, min_y0)
+        print(max_x0, max_y0)
 
 for object in bpy.context.scene.objects:
     if object.name in ['Camera', 'Lamp']:
@@ -131,8 +158,8 @@ for object in bpy.context.scene.objects:
     # if args.scale != 1:
     #     bpy.ops.transform.resize(value=(args.scale, args.scale, args.scale))
     #     bpy.ops.object.transform_apply(scale=True)
-    if obj_dimension != 0:
-        bpy.ops.transform.resize(value=(1 / obj_dimension, 1 / obj_dimension, 1 / obj_dimension))
+    if max_obj_dimension != 0:
+        bpy.ops.transform.resize(value=(1 / max_obj_dimension, 1 / max_obj_dimension, 1 / max_obj_dimension))
         bpy.ops.object.transform_apply(scale=True)
     if args.remove_doubles:
         bpy.ops.object.mode_set(mode='EDIT')
@@ -143,6 +170,7 @@ for object in bpy.context.scene.objects:
         bpy.context.object.modifiers["EdgeSplit"].split_angle = 1.32645
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier="EdgeSplit")
 
+min_x, min_y, max_x, max_y = 0, 0, 0, 0
 for ob in bpy.context.scene.objects:
     if ob.type == 'MESH':
         ob.rotation_euler[0] = 0
@@ -160,6 +188,12 @@ for ob in bpy.context.scene.objects:
         # print("Local:", pivot)
         # print("Global:", global_offset)
         # pivot[2] = 0
+        print(min_x, min_y)
+        print(max_x, max_y)
+        # min_x = (25450000 + 8000.0) / obj_dimension
+        # min_y = (6665000 + 7250.0) / obj_dimension
+        # max_x = (25450000 + 8250.0) / obj_dimension
+        # max_y = (6665000 + 7500.0) / obj_dimension
 
         ob.location = ob.location - Vector(((min_x + max_x) / 2, (min_y + max_y) / 2, 0))
         # if args.move_and_save:
@@ -201,9 +235,10 @@ def make_dir(path):
     #     shutil.rmtree(path)
     #     os.makedirs(path)
 
+
 scene = bpy.context.scene
-scene.render.resolution_x = obj_dimension * 10
-scene.render.resolution_y = obj_dimension * 10
+scene.render.resolution_x = obj_dimension_x * 10
+scene.render.resolution_y = obj_dimension_y * 10
 scene.render.resolution_percentage = 100
 scene.render.alpha_mode = 'TRANSPARENT'
 scene.camera.data.clip_end = 5000
@@ -214,8 +249,7 @@ image_id = 0
 cam_offset_base = [0, 0, 0]
 # cam_offset_base = (11.65, -4.58, -51.47)
 # cam_distance = 40 if obj_dimension == 0 else obj_dimension * 1.0
-cam_distance = 0.5
-small_distance = 0 # 1e-5
+small_distance = 0  # 1e-5
 cam_location_base_list = [(small_distance, small_distance, cam_distance)]
 # (small_distance, cam_distance, small_distance),
 # (cam_distance, small_distance, small_distance)]
@@ -269,3 +303,5 @@ for cam_location_base in cam_location_base_list:
 
 f.close()
 print(cam_distance)
+print(min_x0, min_y0, max_x0, max_y0)
+print(min_x, min_y, max_x, max_y)
