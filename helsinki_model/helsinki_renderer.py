@@ -101,7 +101,7 @@ else:
     # Size is chosen kind of arbitrarily, try out until you're satisfied with resulting depth map.
     map.offset = [150 / max_obj_dimension - cam_distance]
     # map.size = [args.depth_scale]
-    map.size = [1]
+    map.size = [15]
     map.use_min = True
     map.min = [0]
     map.use_max = True
