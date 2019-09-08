@@ -237,8 +237,8 @@ def make_dir(path):
 
 
 scene = bpy.context.scene
-scene.render.resolution_x = obj_dimension_x * 10
-scene.render.resolution_y = obj_dimension_y * 10
+scene.render.resolution_x = obj_dimension_x * 1
+scene.render.resolution_y = obj_dimension_y * 1
 scene.render.resolution_percentage = 100
 scene.render.alpha_mode = 'TRANSPARENT'
 scene.camera.data.clip_end = 5000
