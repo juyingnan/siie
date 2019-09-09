@@ -1,6 +1,9 @@
 from skimage import io
 import os
 import numpy as np
+from PIL import Image
+
+Image.MAX_IMAGE_PIXELS = None
 
 # path = r'C:\Users\bunny\Desktop\Data_region\674497a4\Tile_+029_+025_L21_0000000_MERGED_MERGED\00_d.png0001.png'
 #
