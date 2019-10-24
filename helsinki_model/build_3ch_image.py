@@ -28,7 +28,7 @@ if alpha_img_name is None:
 else:
     alpha_layer = 255 - io.imread(os.path.join(root_dir, alpha_img_name))  # [..., :1]
 print(alpha_layer.shape)
-final_img = np.multiply(base_img, alpha_layer.reshape(alpha_layer.shape[0], alpha_layer.shape[1], 1) / 255)
+final_img = 255 - np.multiply((255-base_img), alpha_layer.reshape(alpha_layer.shape[0], alpha_layer.shape[1], 1) / 255)
 print(final_img.shape)
 
 io.imsave(output_path, final_img)
