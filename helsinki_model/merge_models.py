@@ -8,12 +8,14 @@ dirs = os.listdir(root_dir)
 
 for dir in dirs:
     dir_path = os.path.join(root_dir, dir)
+    if not os.path.isdir(dir_path):
+        continue
     # print(dir_path)
     file_names = [file for file in os.listdir(dir_path) if file.endswith('obj')]
     # assert len(file_names) >= 1
     if len(file_names) <= 1:
         continue
-    default_line = r'START /W C:\Users\bunny\Desktop\CloudCompareStereo_v2.10.2_bin_x64\CloudCompare.exe ' \
+    default_line = r'START /W C:\Users\bunny\Desktop\CloudCompareStereo_v2.11.3_bin_x64\CloudCompare.exe ' \
                    r'-SILENT -NO_TIMESTAMP -M_EXPORT_FMT OBJ '
     line = '{}'.format(default_line)
     parameter_count = 0
