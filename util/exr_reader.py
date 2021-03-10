@@ -1,5 +1,4 @@
 import cv2
-from skimage import io
 from PIL import Image, ImageDraw, ImageFont
 
 camera_height = 250
