@@ -6,7 +6,7 @@ def make_dir(path):
         os.makedirs(path)
 
 
-root_dir = r'C:\Users\bunny\Desktop\Data'
+root_dir = r'X:\675499'
 folder_name = 'combine'
 output_path = os.path.join(root_dir, folder_name)
 make_dir(output_path)
