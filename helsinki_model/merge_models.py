@@ -1,9 +1,11 @@
 import os
+import clean_low_level_model as clean
 
-root_dir = r'C:\Users\bunny\Desktop\Data'
-batch_size = 10
-file = open('command/render_test.bat', 'w')
+root_dir = r'X:\675499'
+merge_level = 'L21'
+file = open('command/merge_test.bat', 'w')
 
+clean.clean_lower_levels(root_dir)
 dirs = os.listdir(root_dir)
 
 for dir in dirs:
@@ -15,14 +17,14 @@ for dir in dirs:
     # assert len(file_names) >= 1
     if len(file_names) <= 1:
         continue
-    default_line = r'START /W C:\Users\bunny\Desktop\CloudCompareStereo_v2.11.3_bin_x64\CloudCompare.exe ' \
+    default_line = r'START /W "Merging" "C:\Program Files\CloudCompare\CloudCompare.exe" ' \
                    r'-SILENT -NO_TIMESTAMP -M_EXPORT_FMT OBJ '
     line = '{}'.format(default_line)
     parameter_count = 0
     for file_name in file_names:
         file_path = os.path.join(dir_path, file_name)
         level = file_name.split('_')[3]
-        assert level == 'L21'
+        assert level == merge_level
         line += r'-O {} '.format(file_path)
         parameter_count += 1
         if len(line) >= 900:
