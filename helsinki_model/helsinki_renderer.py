@@ -91,13 +91,12 @@ for ob in bpy.context.scene.objects:
         obj_dimension_y = max(ob.dimensions[1:])
 print('Max dimension: {}, {}'.format(obj_dimension_x, obj_dimension_y))
 max_obj_dimension = max(obj_dimension_x, obj_dimension_y)
-print(obj_dimension_x, obj_dimension_y)
 
 # for special LOD2 blocks
 if args.custom_size != -1:
     obj_dimension_x = obj_dimension_y = args.custom_size
     max_obj_dimension = max(obj_dimension_x, obj_dimension_y)
-    print(obj_dimension_x, obj_dimension_y)
+    print('Custom dimension: {}, {}'.format(obj_dimension_x, obj_dimension_y))
 
 cam_distance = max_obj_dimension
 # Create input render layer node.
@@ -111,13 +110,13 @@ else:
     # Remap as other types can not represent the full range of depth.
     map = tree.nodes.new(type="CompositorNodeMapValue")
     # Size is chosen kind of arbitrarily, try out until you're satisfied with resulting depth map.
-    map.offset = [150 / max_obj_dimension - cam_distance]
+    # map.offset = [150 / max_obj_dimension - cam_distance]
     # map.size = [args.depth_scale]
-    map.size = [15]
-    map.use_min = True
-    map.min = [0]
-    map.use_max = True
-    map.max = [255]
+    # map.size = [15]
+    # map.use_min = True
+    # map.min = [0]
+    # map.use_max = True
+    # map.max = [255]
     links.new(render_layers.outputs['Depth'], map.inputs[0])
 
     links.new(map.outputs[0], depth_file_output.inputs[0])
@@ -160,8 +159,8 @@ for ob in bpy.context.scene.objects:
         # print("Local:", pivot)
         # print("Global:", global_offset)
         # pivot[2] = 0
-        print(min_x0, min_y0)
-        print(max_x0, max_y0)
+        print("boundary: ", min_x0, min_y0)
+        print("boundary: ", max_x0, max_y0)
 
 for object in bpy.context.scene.objects:
     if object.name in ['Camera', 'Lamp']:
