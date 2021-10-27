@@ -5,13 +5,16 @@
 # blender --background --python mytest.py -- --views 10 /path/to/my.obj
 #
 
+from mathutils import Vector
+import bpy
 import argparse
 import sys
 import os
 from math import radians
 import math
 
-parser = argparse.ArgumentParser(description='Renders given obj file by rotation a camera around it.')
+parser = argparse.ArgumentParser(
+    description='Renders given obj file by rotation a camera around it.')
 parser.add_argument('--views', type=int, default=1,
                     help='number of views to be rendered')
 parser.add_argument('obj', type=str,
@@ -26,6 +29,8 @@ parser.add_argument('--edge_split', type=bool, default=True,
                     help='Adds edge split filter.')
 parser.add_argument('--move_and_save', type=bool, default=False,
                     help='Move to center and overwrite the original file.')
+parser.add_argument('--custom_size', type=float, default=-1,
+                    help='Using Custom size for LOD2 models')
 parser.add_argument('--depth_scale', type=float, default=1.4,
                     help='Scaling that is applied to depth. Depends on size of mesh. '
                          'Try out various values until you get a good result. '
@@ -38,8 +43,6 @@ parser.add_argument('--format', type=str, default='PNG',
 argv = sys.argv[sys.argv.index("--") + 1:]
 args = parser.parse_args(argv)
 
-import bpy
-from mathutils import Vector
 
 # Set up rendering of depth map.
 bpy.context.scene.use_nodes = True
@@ -61,6 +64,8 @@ bpy.data.objects['Cube'].select = True
 bpy.ops.object.delete()
 
 bpy.ops.import_scene.obj(filepath=args.obj)
+obj_name = args.obj.split('\\')[-3]  # depends on the specific project and path
+print(obj_name)
 
 obs = []
 for ob in bpy.context.scene.objects:
@@ -72,7 +77,8 @@ ctx = bpy.context.copy()
 ctx['active_object'] = obs[0]
 ctx['selected_objects'] = obs
 # we need the scene bases as well for joining
-ctx['selected_editable_bases'] = [bpy.context.scene.object_bases[ob.name] for ob in obs]
+ctx['selected_editable_bases'] = [
+    bpy.context.scene.object_bases[ob.name] for ob in obs]
 bpy.ops.object.join(ctx)
 ctx['name'] = 'combine'
 
@@ -85,9 +91,15 @@ for ob in bpy.context.scene.objects:
         obj_dimension_y = max(ob.dimensions[1:])
 print('Max dimension: {}, {}'.format(obj_dimension_x, obj_dimension_y))
 max_obj_dimension = max(obj_dimension_x, obj_dimension_y)
-# obj_dimension = 2650
+print(obj_dimension_x, obj_dimension_y)
 
-cam_distance = 1
+# for special LOD2 blocks
+if args.custom_size != -1:
+    obj_dimension_x = obj_dimension_y = args.custom_size
+    max_obj_dimension = max(obj_dimension_x, obj_dimension_y)
+    print(obj_dimension_x, obj_dimension_y)
+
+cam_distance = max_obj_dimension
 # Create input render layer node.
 render_layers = tree.nodes.new('CompositorNodeRLayers')
 
@@ -158,9 +170,9 @@ for object in bpy.context.scene.objects:
     # if args.scale != 1:
     #     bpy.ops.transform.resize(value=(args.scale, args.scale, args.scale))
     #     bpy.ops.object.transform_apply(scale=True)
-    if max_obj_dimension != 0:
-        bpy.ops.transform.resize(value=(1 / max_obj_dimension, 1 / max_obj_dimension, 1 / max_obj_dimension))
-        bpy.ops.object.transform_apply(scale=True)
+    # if max_obj_dimension != 0:
+    #     bpy.ops.transform.resize(value=(1 / max_obj_dimension, 1 / max_obj_dimension, 1 / max_obj_dimension))
+    #     bpy.ops.object.transform_apply(scale=True)
     if args.remove_doubles:
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.remove_doubles()
@@ -190,12 +202,23 @@ for ob in bpy.context.scene.objects:
         # pivot[2] = 0
         print(min_x, min_y)
         print(max_x, max_y)
-        # min_x = (25450000 + 8000.0) / obj_dimension
-        # min_y = (6665000 + 7250.0) / obj_dimension
-        # max_x = (25450000 + 8250.0) / obj_dimension
-        # max_y = (6665000 + 7500.0) / obj_dimension
 
-        ob.location = ob.location - Vector(((min_x + max_x) / 2, (min_y + max_y) / 2, 0))
+        # for special LOD2 blocks
+        if args.custom_size != -1:
+            # customize these values
+            min_x = 6000
+            min_y = 4000
+            max_x = 8000
+            max_y = 6000
+            min_x = (25490000 + min_x)  # / max_obj_dimension
+            min_y = (6668000 + min_y)  # / max_obj_dimension
+            max_x = (25490000 + max_x)  # / max_obj_dimension
+            max_y = (6668000 + max_y)  # / max_obj_dimension
+            print(min_x, min_y)
+            print(max_x, max_y)
+
+        ob.location = ob.location - \
+            Vector(((min_x + max_x) / 2, (min_y + max_y) / 2, 0))
         # if args.move_and_save:
         #     bpy.ops.export_scene.obj(filepath=args.obj, use_selection=True)
 
@@ -244,7 +267,7 @@ scene.render.alpha_mode = 'TRANSPARENT'
 scene.camera.data.clip_end = 5000
 cam = scene.objects['Camera']
 bpy.data.cameras['Camera'].type = 'ORTHO'
-bpy.data.cameras['Camera'].ortho_scale = 1
+bpy.data.cameras['Camera'].ortho_scale = max_obj_dimension
 image_id = 0
 cam_offset_base = [0, 0, 0]
 # cam_offset_base = (11.65, -4.58, -51.47)
@@ -255,11 +278,13 @@ cam_location_base_list = [(small_distance, small_distance, cam_distance)]
 # (cam_distance, small_distance, small_distance)]
 # cam_location_base_list = [(0, 0.0001, 2), (0, 2, 0), (0, 1.5, 1.5)]
 make_dir(args.output_folder)
-render_list_file_path = fp = os.path.join(args.output_folder, 'rendering_metadata.txt')
+render_list_file_path = fp = os.path.join(
+    args.output_folder, 'rendering_metadata.txt')
 f = open(render_list_file_path, "w")
 
 for cam_location_base in cam_location_base_list:
-    cam.location = [(loc - offset) for loc, offset in zip(cam_location_base, cam_offset_base)]
+    cam.location = [(loc - offset)
+                    for loc, offset in zip(cam_location_base, cam_offset_base)]
     print(cam.location)
     phi = 0
     # phi = math.degrees(math.atan(cam_location_base[2] / cam_location_base[1]))
@@ -271,12 +296,13 @@ for cam_location_base in cam_location_base_list:
 
     model_identifier = os.path.split(os.path.split(args.obj)[0])[1]
     fp = os.path.join(args.output_folder, model_identifier, model_identifier)
-    scene.render.image_settings.file_format = 'PNG'  # set output format to .png
+    # scene.render.image_settings.file_format = 'PNG'  # set output format to .png
 
     stepsize = 360.0 / args.views
     rotation_mode = 'XYZ'
 
-    for output_node in [depth_file_output, normal_file_output]:  # , albedo_file_output]:
+    # , albedo_file_output]:
+    for output_node in [depth_file_output, normal_file_output]:
         output_node.base_path = ''
 
     base_angle = 270
@@ -285,10 +311,15 @@ for cam_location_base in cam_location_base_list:
 
     for i in range(0, args.views):
         print("Rotation {}, {}".format((stepsize * i), radians(stepsize * i)))
-        scene.render.filepath = os.path.join(args.output_folder, '{0:02d}'.format(image_id))
-        depth_file_output.file_slots[0].path = os.path.join(args.output_folder, '{0:02d}_d.png'.format(image_id))
+        scene.render.filepath = os.path.join(args.output_folder, obj_name)
+        print(scene.render.filepath)
+        depth_file_output.file_slots[0].path = os.path.join(
+            args.output_folder, '{}_d'.format(obj_name))
+        print(depth_file_output.file_slots[0].path)
         # depth_file_output.file_slots[0].path = scene.render.filepath + "_depth.png"
-        normal_file_output.file_slots[0].path = os.path.join(args.output_folder, '{0:02d}_n.png'.format(image_id))
+        normal_file_output.file_slots[0].path = os.path.join(
+            args.output_folder, '{}_n'.format(obj_name))
+        print(normal_file_output.file_slots[0].path)
         # albedo_file_output.file_slots[0].path = scene.render.filepath + "_albedo.png"
 
         bpy.ops.render.render(write_still=True)  # render still
@@ -298,7 +329,8 @@ for cam_location_base in cam_location_base_list:
 
         # output rendering file
         angle = (base_angle - stepsize * i + 360) % 360
-        distance = math.sqrt(sum([item * item for item in cam.location])) * 0.57
+        distance = math.sqrt(
+            sum([item * item for item in cam.location])) * 0.57
         f.write('{} {} 0 {} 25\n'.format(angle, phi, distance))
 
 f.close()
