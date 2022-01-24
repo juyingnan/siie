@@ -102,3 +102,4 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+helsinki_model/unet/test.hdf5
