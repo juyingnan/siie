@@ -103,3 +103,4 @@ venv.bak/
 # mypy
 .mypy_cache/
 helsinki_model/unet/test.hdf5
+command/merge_test.bat
